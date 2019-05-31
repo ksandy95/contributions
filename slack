@@ -1,0 +1,233 @@
+def team_stats
+     stats = []
+     teams.each do |team|
+       game_teams.each{|stat| stats.push(stat) if game_team.team_id == team.team_id}
+     end
+     stats
+   end
+
+   def away_wins_a
+     away_win = []
+     team_stats.each do |stat|
+       if game_teams.hoa == "away" && game.won == "TRUE"
+         away_win.push(stat)
+       end
+     end
+     away_win
+   end
+
+   def home_wins_a
+     home_wins_ = []
+     game_teams.each do |stat|
+       if stat.hoa == "home" && stat.won == "TRUE"
+         home_wins_.push(stat)
+       end
+     end
+     home_wins_
+   end
+
+   def away_games_b
+     away_games_c = []
+     game_teams.each do |stat|
+       if stat.hoa == "away"
+         away_games_c.push(stat)
+       end
+     end
+     away_games_c
+   end
+
+   def home_games_b
+     home_games = []
+     game_teams.each do |stat|
+       if stat.hoa == "home"
+         home_games.push(stat)
+       end
+     end
+     home_games
+   end
+
+   def away_win_average
+     away_wins_a.count.to_f / away_games_b.count
+   end
+
+   def home_win_average
+     home_wins_a.count.to_f / home_games_b.count
+   end
+
+   def fin
+     home_win_average - away_win_average
+   end
+
+   def fans_by_team
+     fans = {}
+       fans[team] = fin
+     fans
+   end
+
+   def win_percentage_by_team
+     win_per_by_team = {}
+     teams.each do |team|
+       wins = []
+       team_stats.each{|stat| wins.push(stat) if stat.won == "TRUE" }
+       final = (wins.count.to_f/team_stats.count).round(2)
+       win_per_by_team[team.team_name] = final
+     end
+     win_percentage_by_team
+   end
+
+   def winningest_team
+     winning = win_percentage_by_team.max_by{|team, percentage| percentage}
+     winning.first
+   end
+
+   def best_fans
+     best = fans_by_team.max_by{|team, percentage| percentage}
+     best.first.team_name
+   end
+
+   def worst_fans
+     worst = []
+     fans_by_team.each{ |team, percentage| worst << team.team_name if percentage < 0 }
+     worst.first
+   end
+
+
+Where my code was that was returning passing rake but not spec for these three methods.
+================================================================================
+
+#### This messgage below is what i sent along with my methods.
+#### I was not trying to lone wolf anything and actively looked for team feedback.
+
+#hey just tossing this in here so yall can see what ive got. I have a lot of helper methods.
+# Im so down to refactor it to way less! Also with getting rid of my .each's that are all over the place.
+
+def all_games(team_id)
+    games.select{|game| game.away_team_id == team_id || game.home_team_id == team_id}
+  end
+
+  def rivals(team_id)
+     all_rivals = []
+     all_games(team_id).each do |game|
+       if game.away_team_id != team_id && game.home_team_id == team_id
+         all_rivals << game.away_team_id
+       elsif game.away_team_id == team_id && game.home_team_id != team_id
+         all_rivals << game.home_team_id
+       end
+     end
+     all_rivals.uniq
+   end
+
+   def shared_games(team_id)
+      sg = []
+     rivals(team_id).each do |rival|
+        games.each do |game|
+           if game.away_team_id == team_id && game.home_team_id == rival
+             sg << game
+           elsif game.away_team_id == rival && game.home_team_id == team_id
+             sg << game
+           end
+        end
+      end
+      sg
+   end
+
+  def rival_win(team_id)
+    rivals(team_id).each do |rival|
+      rw= []
+      shared_games.each do |game|
+        if game.away_team_id == rival && game.outcome.include?("away")
+          rw.push(game)
+        elsif game.home_team_id == rival && game.outcome.include?("home")
+          rw.push(game)
+        end
+      end
+    end
+    rw
+  end
+
+  def other_team
+    rivals(team_id).each do |rival|
+      other_team = teams.find { |team| team.team_id == rival }
+    end
+    other_team
+  end
+
+  def favorite_opponent(team_id)
+    hash = {}
+      hash[other_team.team_name] = (rival_win.count.to_f/shared_games.count).round(2)
+      answer = hash.min_by {|team, percent| percent}
+      answer.first
+  end
+
+  def rival(team_id)
+    rival_hash = {}
+      rival_hash[other_team.team_name] = (rival_win.count.to_f/shared_games.count).round(2)
+      answer = rivals.max_by{|team, percent| percent}
+      answer.first
+  end
+
+  def team_wins
+    wins = []
+    shared_games.each do |game|
+      if game.away_team_id == team_id && game.outcome.include?("away") ||
+         game.home_team_id == team_id && game.outcome.include?("home")
+        wins.push(game)
+      end
+    end
+    wins
+  end
+
+  def head_to_head(team_id)
+    head_head = {}
+    head_head[other_team.team_name] = (team_wins.count.to_f/shared_games.count).round(2)
+  end
+
+
+# I sent these messages to my teammates to kep them updated on my progress over slack
+# These were giving the data type we wanted back in the tests and for the same data type
+# as the spec. Before running it again we didnt know they werent good. They passed rake alright
+# and the coverage was good.
+=================================================================
+
+# Jori can you walk me through your team_id?
+# this is what i struggle bussed with
+
+def team_info(id)
+    team = teams.find{|x| x.team_id == id}
+
+    team_hash = {
+    "team_id" => team.team_id,
+    "franchise_id" => team.franchise_id,
+    "short_name" => team.short_name,
+    "team_name" => team.team_name,
+    "abbreviation" => team.abbreviation,
+    "link" => team.link}
+  end
+
+====================================================================
+
+I'm gonna need help refactoring. I spent a lot of time trying
+ to go one way with it and it didnt work out
+ and I ended up going with a way that my methods are really long and janky
+:(
+It do the thing. But it's not nice looking and I got super
+demoralized this morning/ last night about it.
+Alternatively after I grab a little more sleep maybe one of you could take
+ a look at the other way I was originally approaching it?
+
+=======================================================================
+
+### This was when the code was running with rake alright. We had put spec
+### on the back burner for the time being with our optimism
+
+ Maybe you'd have a different set of eyes to work through the logic on it!
+ It does feel good to have it do the thing I want to to do.
+ But a lot of time and energy spent on trying to make them short
+  and pretty with a helper method was rough.
+
+
+
+### There are more individual messages i send to sejin, will and jori asking for
+### help to review things. Working strictly with taught enumerables was a challenge.
+### using each, find, and select were weird almost Not having them in my standard
+### enumerable tool kit, it was a change. A welcome one for sure to get more comfortable.
